@@ -25,17 +25,12 @@ exports.getUsers = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
 
-    console.log('req', req.params);
-    const {userId} = req.params;
+    const userId = req.params.userId;
     const tenantId = req.tenantId;
 
-    console.log('userIduserId0', userId);
-    console.log('tenantId', tenantId);
-    try {
+     try {
 
-        const tenant = await Tenant.findOne({ name: tenantId });
-
-
+      const tenant = await Tenant.findOne({ name: tenantId });
       const user = await User.findOne({ _id: userId, tenant: tenant._id });
       if (!user) {
         res.status(404).json({ error: 'User not found' });
@@ -43,15 +38,16 @@ exports.getUserById = async (req, res) => {
       }
       res.json(user);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
+       console.error(error);
+       res.status(500).json({ error: 'Internal Server Error' });
+     }
   };
 
   
 
 exports.createUser = async (req, res) => {
-  const { tenantId } = req;
+  
+  const tenantId = req.tenantId;
   const { email, mobile } = req.body;
 
   try {
@@ -71,11 +67,17 @@ exports.createUser = async (req, res) => {
 };
 
 exports.updateUserById = async (req, res) => {
-  const { tenantId, userId } = req.params;
-  const { username, password, email } = req.body;
+  const userId = req.params.userId;
+  const tenantId = req.tenantId;
+  const { mobile, email } = req.body;
 
   try {
-    const user = await User.findOneAndUpdate({ _id: userId, tenantId }, { username, password, email }, { new: true });
+    const tenant = await Tenant.findOne({ name: tenantId });
+    if (!tenant) {
+      res.status(404).json({ error: 'Tenant not found' });
+      return;
+    }
+    const user = await User.findOneAndUpdate({ _id: userId, tenant: tenant._id }, { mobile, email }, { new: true });
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
@@ -88,10 +90,16 @@ exports.updateUserById = async (req, res) => {
 };
 
 exports.deleteUserById = async (req, res) => {
-  const { tenantId, userId } = req.params;
+  const userId = req.params.userId;
+  const tenantId = req.tenantId;
 
+  const tenant = await Tenant.findOne({ name: tenantId });
+  if (!tenant) {
+    res.status(404).json({ error: 'Tenant not found' });
+    return;
+  }
   try {
-    const user = await User.findOneAndDelete({ _id: userId, tenantId });
+    const user = await User.findOneAndDelete({ _id: userId, tenant: tenant._id });
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
